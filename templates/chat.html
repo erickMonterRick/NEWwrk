@@ -6,14 +6,30 @@
 </head>
 <body>
     <h2>Welcome, {{ username }}! <a href="/logout">Logout</a></h2>
+    
+    <!-- Chat messages display -->
     <div id="chat-box">
-        {% for user, msg, time in messages %}
-            <p><strong>{{ user }}</strong> [{{ time }}]: {{ msg }}</p>
+        {% for msg in messages %}
+            <p><strong>{{ msg[1] }}</strong> [{{ msg[3] }}]: {{ msg[2] }}</p>
         {% endfor %}
     </div>
+    
+    <!-- Message input form -->
     <form method="POST">
         <input type="text" name="message" placeholder="Type your message..." required>
         <button type="submit">Send</button>
     </form>
+    
+    <!-- Delete messages section -->
+    <ul>
+        {% for msg in messages %}
+            <li>
+                <strong>{{ msg[1] }}</strong>: {{ msg[2] }} ({{ msg[3] }})
+                <form action="{{ url_for('delete_message', message_id=msg[0]) }}" method="post" style="display:inline;">
+                    <button type="submit">Delete</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
 </body>
 </html>

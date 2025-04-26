@@ -55,10 +55,22 @@ def chat():
                     (session['username'], message, timestamp))
         db.commit()
 
-    cur.execute("SELECT username, message, timestamp FROM messages ORDER BY id DESC LIMIT 20")
+    # Update query to include the `id` of each message
+    cur.execute("SELECT id, username, message, timestamp FROM messages ORDER BY id DESC LIMIT 20")
     messages = cur.fetchall()
     messages.reverse()  # Show oldest first
     return render_template('chat.html', messages=messages, username=session['username'])
+
+@app.route('/delete_message/<int:message_id>', methods=['POST'])
+def delete_message(message_id):
+    if 'username' not in session:
+        return redirect('/')
+    
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("DELETE FROM messages WHERE id = ?", (message_id,))
+    db.commit()
+    return redirect('/chat')
 
 @app.route('/logout')
 def logout():
@@ -68,10 +80,4 @@ def logout():
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
-#f
-
-
-
-
-
 
