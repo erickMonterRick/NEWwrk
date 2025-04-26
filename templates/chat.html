@@ -2,7 +2,109 @@
 <html>
 <head>
     <title>Chat Room</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* General Styling */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f5; /* Light gray background */
+            margin: 0;
+            padding: 0;
+        }
+        h2 {
+            text-align: center;
+            background-color: #4CAF50; /* Green header */
+            color: white;
+            padding: 10px;
+            margin: 0;
+        }
+        h2 a {
+            color: #f44336; /* Red color for Logout */
+            text-decoration: none;
+            font-weight: bold; /* Make the link bold for emphasis */
+            float: right;
+            margin-right: 20px;
+        }
+        h2 a:hover {
+            text-decoration: underline; /* Add an underline effect on hover */
+        }
+
+        /* Chat Box Styling */
+        #chat-box {
+            width: 80%;
+            margin: 20px auto;
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: white;
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Chat Bubbles */
+        .chat-bubble {
+            margin: 10px 0;
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 60%;
+            color: white;
+            line-height: 1.5;
+        }
+        .chat-bubble.user {
+            background-color: #4CAF50; /* Green for user's messages */
+            text-align: left;
+            margin-left: auto;
+        }
+        .chat-bubble.other {
+            background-color: #007BFF; /* Blue for other users' messages */
+            text-align: left;
+        }
+        .chat-meta {
+            font-size: 0.8em;
+            color: #ddd;
+        }
+
+        /* Form Styling */
+        form {
+            width: 80%;
+            margin: 0 auto 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        input[type="text"] {
+            width: 85%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            font-size: 1em;
+        }
+        button {
+            width: 12%;
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            background-color: #4CAF50;
+            color: white;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Delete Button Styling */
+        .delete-btn {
+            font-size: 0.8em;
+            background-color: #f44336; /* Red for delete */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+    </style>
 </head>
 <body>
     <h2>Welcome, {{ username }}! <a href="/logout">Logout</a></h2>
@@ -10,7 +112,16 @@
     <!-- Chat messages display -->
     <div id="chat-box">
         {% for msg in messages %}
-            <p><strong>{{ msg[1] }}</strong> [{{ msg[3] }}]: {{ msg[2] }}</p>
+            <div class="chat-bubble {% if msg['username'] == username %}user{% else %}other{% endif %}">
+                <p><strong>{{ msg['username'] }}</strong>: {{ msg['message'] }}</p>
+                <p class="chat-meta">{{ msg['timestamp'] }}</p>
+                <!-- Show delete button only if the logged-in user owns the message -->
+                {% if msg['username'] == username %}
+                    <form action="{{ url_for('delete_message', message_id=msg['id']) }}" method="post" style="display:inline;">
+                        <button type="submit" class="delete-btn">Delete</button>
+                    </form>
+                {% endif %}
+            </div>
         {% endfor %}
     </div>
     
@@ -19,17 +130,5 @@
         <input type="text" name="message" placeholder="Type your message..." required>
         <button type="submit">Send</button>
     </form>
-    
-    <!-- Delete messages section -->
-    <ul>
-        {% for msg in messages %}
-            <li>
-                <strong>{{ msg[1] }}</strong>: {{ msg[2] }} ({{ msg[3] }})
-                <form action="{{ url_for('delete_message', message_id=msg[0]) }}" method="post" style="display:inline;">
-                    <button type="submit">Delete</button>
-                </form>
-            </li>
-        {% endfor %}
-    </ul>
 </body>
 </html>

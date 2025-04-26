@@ -7,23 +7,25 @@ app.secret_key = 'your_secret_key'  # Change this in production
 
 DATABASE = 'chat.db'
 
+# Database connection management
 def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sqlite3.connect(DATABASE)
-    return db
+    if not hasattr(g, '_database'):
+        g._database = sqlite3.connect(DATABASE)
+        g._database.row_factory = sqlite3.Row  # Allow dictionary-like access to rows
+    return g._database
 
 @app.teardown_appcontext
 def close_connection(exception):
     db = getattr(g, '_database', None)
-    if db is not None:
+    if db:
         db.close()
 
+# Initialize the database
 def init_db():
     with app.app_context():
         db = get_db()
-        cur = db.cursor()
-        cur.execute('''
+        cursor = db.cursor()
+        cursor.execute('''
             CREATE TABLE IF NOT EXISTS messages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT NOT NULL,
@@ -44,32 +46,41 @@ def login():
 def chat():
     if 'username' not in session:
         return redirect('/')
-    
+
     db = get_db()
-    cur = db.cursor()
-    
+    cursor = db.cursor()
+
+    # Handle message submission
     if request.method == 'POST':
         message = request.form['message']
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        cur.execute("INSERT INTO messages (username, message, timestamp) VALUES (?, ?, ?)",
-                    (session['username'], message, timestamp))
+        cursor.execute(
+            "INSERT INTO messages (username, message, timestamp) VALUES (?, ?, ?)",
+            (session['username'], message, timestamp)
+        )
         db.commit()
 
-    # Update query to include the `id` of each message
-    cur.execute("SELECT id, username, message, timestamp FROM messages ORDER BY id DESC LIMIT 20")
-    messages = cur.fetchall()
-    messages.reverse()  # Show oldest first
+    # Fetch messages with IDs for the front-end
+    cursor.execute("SELECT id, username, message, timestamp FROM messages ORDER BY id DESC LIMIT 20")
+    messages = cursor.fetchall()
+    messages.reverse()  # Show messages in chronological order
     return render_template('chat.html', messages=messages, username=session['username'])
 
 @app.route('/delete_message/<int:message_id>', methods=['POST'])
 def delete_message(message_id):
     if 'username' not in session:
         return redirect('/')
-    
+
     db = get_db()
-    cur = db.cursor()
-    cur.execute("DELETE FROM messages WHERE id = ?", (message_id,))
-    db.commit()
+    cursor = db.cursor()
+
+    # Verify the logged-in user owns the message
+    cursor.execute("SELECT username FROM messages WHERE id = ?", (message_id,))
+    result = cursor.fetchone()
+    if result and result['username'] == session['username']:
+        cursor.execute("DELETE FROM messages WHERE id = ?", (message_id,))
+        db.commit()
+
     return redirect('/chat')
 
 @app.route('/logout')
@@ -80,4 +91,3 @@ def logout():
 if __name__ == '__main__':
     init_db()
     app.run(debug=True)
-
