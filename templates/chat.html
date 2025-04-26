@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Room</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h2>Welcome, {{ username }}! <a href="/logout">Logout</a></h2>
+    <div id="chat-box">
+        {% for user, msg, time in messages %}
+            <p><strong>{{ user }}</strong> [{{ time }}]: {{ msg }}</p>
+        {% endfor %}
+    </div>
+    <form method="POST">
+        <input type="text" name="message" placeholder="Type your message..." required>
+        <button type="submit">Send</button>
+    </form>
+</body>
+</html>
